@@ -55,16 +55,18 @@ def dummy(board):
 			max_snowballs = 5
 			min_snowballs = 2
 
-			moves = 0
+			#moves = 0
 
 			if distance < 3:
 				curr_dir = get_opposite_direction(curr_dir)
-			elif distance < 4 or (last_dir == curr_dir and curr_dir in safe_dirs and distance < 8):
+			elif (distance < 4 and curr_dir in safe_dirs) or (distance < 4.5 and curr_dir not in safe_dirs)  or (last_dir == curr_dir and curr_dir in safe_dirs and distance < 8):
 				snowballs -= 1 
 				return (Action.THROWSNOWBALL , curr_dir)
 		elif board.get_object_at(loc) == board.SNOWBALL:
 			snowball_loc = eval(loc)
-			curr_dir = get_perp_direction(get_direction(loc))
+			snowball_dist = get_distance(snowball_loc)
+			if snoball_dist < 3.5:
+				curr_dir = get_perp_direction(get_direction(snowball_loc))
 		else:
 			max_snowballs = 10
 			min_snowballs = 3
@@ -87,15 +89,12 @@ def dummy(board):
 	
 	#last_loc = board.next_pos_in_direction((0, 0) , curr_dir)
 	
-	if moves > max_moves:
-		return (Action.MAKESNOWBALL , curr_dir)
-
 	moves+=1
 	return (Action.MOVE, curr_dir)
 
 	
 
-def get_distance(loc , curr_loc):
+def get_distance(loc , curr_loc=(0,0)):
 	return math.sqrt(math.pow(loc[0] , 2) + math.pow(loc[1] , 2))
 
 def get_direction(loc , curr_loc=(0,0)):
@@ -152,7 +151,7 @@ max_moves = 100
 c = Client()
 
 # Insert your key here
-c.KEY = "" 
+c.KEY = "g2lVRjJN96svcwTYPG8K0MmUfdQq6Xg1" 
 
 
 # Tell the client to use this function to decide the next move.
