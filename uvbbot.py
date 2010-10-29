@@ -12,9 +12,14 @@ def dummy(board):
 	# We need this variable to keep state between moves
 	global curr_dir
 	global last_loc
+
 	global snowballs
 	global snowball_target
 	global min_snowballs
+	global max_snowballs
+	
+	global moves
+	global max_moves
 
 	# Print out our view of the game board
 	print board
@@ -41,17 +46,25 @@ def dummy(board):
 
 	for loc in board.objects:
 		if board.get_object_at(loc) == board.PLAYER:
-			print loc
-			print loc.__class__
+			player_loc = eval(loc)
 			last_dir = curr_dir
-			curr_dir = get_direction(eval(loc))
-			distance = get_distance(eval(loc))
+			curr_dir = get_direction(player_loc)
+			distance = get_distance(player_loc)
 			print distance
+
 			max_snowballs = 5
 			min_snowballs = 2
-			if distance < 3 or (last_dir == curr_dir and curr_dir in safe_dirs and distance < 6):
+
+			moves = 0
+
+			if distance < 3:
+				curr_dir = get_opposite_direction(curr_dir)
+			elif distance < 4 or (last_dir == curr_dir and curr_dir in safe_dirs and distance < 8):
 				snowballs -= 1 
 				return (Action.THROWSNOWBALL , curr_dir)
+		elif board.get_object_at(loc) == board.SNOWBALL:
+			snowball_loc = eval(loc)
+			curr_dir = get_perp_direction(get_direction(loc))
 		else:
 			max_snowballs = 10
 			min_snowballs = 3
@@ -71,20 +84,25 @@ def dummy(board):
 
 		obj = board.get_object_at(board.next_pos_in_direction((0,0) , curr_dir))
 
+	
 	#last_loc = board.next_pos_in_direction((0, 0) , curr_dir)
+	
+	if moves > max_moves:
+		return (Action.MAKESNOWBALL , curr_dir)
 
+	moves+=1
 	return (Action.MOVE, curr_dir)
 
 	
 
-def get_distance(loc):
+def get_distance(loc , curr_loc):
 	return math.sqrt(math.pow(loc[0] , 2) + math.pow(loc[1] , 2))
 
-def get_direction(loc):
+def get_direction(loc , curr_loc=(0,0)):
 	#global last_loc
 
-	x_diff = 0 - loc[0]
-	y_diff = 0 - loc[1]
+	x_diff = curr_loc[0] - loc[0]
+	y_diff = curr_loc[1] - loc[1]
 
 	if x_diff > 0:
 		#Some kind of west
@@ -108,22 +126,34 @@ def get_direction(loc):
 		else:
 			return Direction.SOUTH 
 
+def get_slope(loc , curr_loc):
+	return (curr_loc[0] - loc[0]) / (curr_loc[1] - loc[1])
 
+def get_opposite_direction(direction):
+	return (direction + 3) % 8
 
+def get_perp_direction(direction):
+	return direction + 1
 
 # Initial direction to try to move
 curr_dir = Direction.SOUTH
 last_loc = ()
+
 snowballs = 0
 snowball_target = 0
 min_snowballs = 3
 max_snowballs = 10
 
+moves = 0
+max_moves = 100
+
+
 # Create our client
 c = Client()
 
 # Insert your key here
-c.KEY = <KEY>
+c.KEY = "" 
+
 
 # Tell the client to use this function to decide the next move.
 # This function is defined above.
