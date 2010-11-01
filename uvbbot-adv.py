@@ -11,36 +11,32 @@ import math
 def dummy(board):
 	# We need this variable to keep state between moves
 	global curr_dir
-	global last_loc
+	global curr_loc
 
 	global snowballs
-	global snowball_target
 	global min_snowballs
 	global max_snowballs
 	
 	global moves
 	global max_moves
+	global move_toggle
 
 	# Print out our view of the game board
 	print board
 
-	if snowballs < snowball_target:
-		snowballs += 1
-		return (Action.MAKESNOWBALL, curr_dir)
-	else:
-		snowball_target = 0
-	
+	possible_acts = list()
+	possible_dirs = list()
+
+	if snowballs < max_snowballs:
+		for i in range(max_snowballs - snowballs):
+			possible_acts.append(Action.MAKESNOWBALL)
+
 	if snowballs < min_snowballs:
-		snowball_target = max_snowballs
-
-	if not last_loc:
-		for loc in board.objects:
-			if board.get_object_at(loc) == board.ME:
-				print loc
-				last_loc = loc
+		for i in range(math.pow(2 , min_snowballs - snowballs)):
+			possible_acts.append(Action.MAKESNOWBALL)
 	
-
-	distance = 0
+	player_locs = list()
+	
 
 	safe_dirs = (Direction.NORTH , Direction.SOUTH , Direction.EAST , Direction.WEST)
 
@@ -57,16 +53,17 @@ def dummy(board):
 
 			#moves = 0
 
-			if distance < 3:
-				curr_dir = get_opposite_direction(curr_dir)
-			elif (distance < 4 and curr_dir in safe_dirs) or (distance < 4.5 and curr_dir not in safe_dirs)  or (last_dir == curr_dir and curr_dir in safe_dirs and distance < 8):
+			if distance <= 2.3:
+				curr_dir = get_perp_direction(curr_dir)
+			elif distance < 3 and curr_dir in safe_dirs or (distance <= 3 and curr_dir not in safe_dirs)  or (last_dir == curr_dir and curr_dir in safe_dirs and distance < 8):
 				snowballs -= 1 
 				return (Action.THROWSNOWBALL , curr_dir)
 		elif board.get_object_at(loc) == board.SNOWBALL:
 			snowball_loc = eval(loc)
 			snowball_dist = get_distance(snowball_loc)
-			if snoball_dist < 3.5:
-				curr_dir = get_perp_direction(get_direction(snowball_loc))
+			print snowball_dist
+			#if snowball_dist < 3.5:
+			#	curr_dir = get_perp_direction(get_direction(snowball_loc))
 		else:
 			max_snowballs = 10
 			min_snowballs = 3
@@ -131,8 +128,25 @@ def get_slope(loc , curr_loc):
 def get_opposite_direction(direction):
 	return (direction + 3) % 8
 
-def get_perp_direction(direction):
-	return direction + 1
+def get_perp_directions(direction):
+	return (direction + 1) % 8
+
+def get_possible_directions(directions , action,  order = 2 , base = 2):
+	possible_directions = list() 
+	for direction in directions:
+		for i in range(order * -1 , order):
+			possible_direction = (direction + order) % 8
+			possible_order = math.pow(base , order - abs(i))
+
+			possible_direction_tuple = (possible_direction, action)
+
+			curr_order = possible_directions.count(possible_direction_tuple)
+
+			if possible_order > curr_order:
+				possible_order = possible_order - curr_order
+				for j in range(possible_order):
+					possible_directions.append(possible_direction_tuple)
+	return possible_directions
 
 # Initial direction to try to move
 curr_dir = Direction.SOUTH
@@ -145,6 +159,8 @@ max_snowballs = 10
 
 moves = 0
 max_moves = 100
+
+move_toggle = True
 
 
 # Create our client
