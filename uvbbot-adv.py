@@ -54,7 +54,7 @@ def dummy(board):
 			print player_dist
 			
 			if player_dist <= min_player_distance:
-				possible_directions = get_possible_directions([get_opposite_direction(player_dir)] , Action.MOVE , order = 1 , base = 20)
+				possible_directions = get_possible_directions(get_opposite_diagonal_direction(player_dir) , Action.MOVE , order = 1 , base = 20)
 				possible_moves.extend(possible_directions)
 			else:
 				possible_directions = get_possible_directions([player_dir] , Action.MOVE , order = 2, base = 3)
@@ -139,7 +139,10 @@ def get_slope(loc , curr_loc = (0,0)):
 		return (curr_loc[0] - loc[0]) / (curr_loc[1] - loc[1])
 
 def get_opposite_direction(direction):
-	return (direction + 3) % 8
+	return (direction + 4) % 8
+
+def get_opposite_diagonal_directions(direction):
+	return [(direction - 5) % 8 , (direction + 5) % 8]
 
 def get_perp_directions(direction):
 	return (direction + 1) % 8
@@ -149,7 +152,7 @@ def get_possible_directions(directions , action,  order = 2 , base = 2):
 	for direction in directions:
 		for i in range(order * -1 , order):
 			#print i , direction
-			possible_direction = (direction + i) % 8
+			possible_direction = (direction + i + 8) % 8
 			possible_order = math.pow(base , order - abs(i))
 
 			#print possible_direction , possible_order
