@@ -4,6 +4,7 @@ from client import Client
 from constants import Action, Direction
 import random
 import math
+import sys
 
 # This function is called everytime the client gets a new map.
 # It decides what move to make and returns the decision.
@@ -12,6 +13,8 @@ def dummy(board):
 	# We need this variable to keep state between moves
 	global curr_dir
 	global curr_loc
+
+	global snowball_locs
 
 	global snowballs
 	global min_snowballs
@@ -33,7 +36,8 @@ def dummy(board):
 	if snowballs < min_snowballs:
 		for i in range(math.pow(2 , min_snowballs - snowballs)):
 			possible_moves.append((Action.MAKESNOWBALL , curr_dir))
-		
+	
+	possible_moves.append((Action.MAKESNOWBALL , curr_dir))
 
 	#replace with the curr_loc + direction at some point
 	for loc in board.objects:
@@ -49,32 +53,65 @@ def dummy(board):
 	
 			player_dir = get_direction(player_loc)
 			player_dist = get_distance(player_loc)
-			#player_slope = math.abs(get_slope(player_loc))
+			player_slope = get_slope(player_loc)
+			
 
 			print player_dist
-			
+			print player_slope
+
 			if player_dist <= min_player_distance:
-				possible_directions = get_possible_directions(get_opposite_diagonal_direction(player_dir) , Action.MOVE , order = 1 , base = 20)
+				possible_directions = get_possible_directions(get_opposite_diagonal_directions(player_dir) , Action.MOVE , order = 1 , base = 30)
 				possible_moves.extend(possible_directions)
 			else:
-				possible_directions = get_possible_directions([player_dir] , Action.MOVE , order = 2, base = 3)
+				possible_directions = get_possible_directions([player_dir] , Action.MOVE , order = 2, base = 5)
 				possible_moves.extend(possible_directions)
-			
+		
 			if player_dist <= max_throw_snowball_distance:
-				possible_directions = get_possible_directions([player_dir] , Action.THROWSNOWBALL , order = 1 , base = 6 + max_throw_snowball_distance - player_dist)
+				possible_directions = get_possible_directions([player_dir] , Action.THROWSNOWBALL , order = 1 , base = 20 + max_throw_snowball_distance - player_dist)
 				possible_moves.extend(possible_directions)
 
 
 	#TODO: implement snowball tracking
-	#tmp_snowball_locs = dict()
+	
+	tmp_snowball_locs = dict()
 
-	#for snoball_loc, snowball_dir  in snowball_locs:
-	#	snowball_loc = get_next_location(snowball_loc , snowball_dir)
-	#	if board.get_object_at(snowball_loc) == board.SNOWBALL:
-	#		tmp_snowball_locs[snowball_loc] = snowball_dir
+	for (snowball_loc) , snowball_dir in snowball_locs.iteritems():
+		print snowball_loc , snowball_dir
+		snowball_loc = board.next_pos_in_direction(snowball_loc , snowball_dir, amount = 2)
+		if board.get_object_at(snowball_loc) == board.SNOWBALL:
+			tmp_snowball_locs[snowball_loc] = snowball_dir
+
+	snowball_locs = tmp_snowball_locs
+
+	#Fix this to deal with Rougue snowballs
+	for loc in board.objects:
+		if board.get_object_at(loc) == board.SNOWBALL:
+			snowball_loc = eval(loc)
+			if snowball_loc not in snowball_locs:
+				min_player_dist = sys.maxint
+				closest_player_loc = ()
+				for player_loc in player_locs:
+					player_dist = get_distance(snowball_loc , player_loc)
+					if player_dist < min_player_dist:
+						min_player_dist = player_dist
+						closest_player_loc = player_loc
+				snowball_dir = get_direction(snowball_loc , closest_player_loc)
+				print snowball_loc , snowball_dir
+				snowball_locs[snowball_loc] = snowball_dir
+
+
+
+	avoid_locs = []
+	
+	#Fix this to something better once collision is understood
+	for (snowball_loc), snowball_dir in snowball_locs:
+		print snowball_loc , snowball_dir
+		avoid_locs.append(snowball_loc)
+		avoid_locs.append(board.next_pos_in_direction(snowball_loc , snowball_dir))
+		avoid_locs.append(board.next_pos_in_direction(snowball_loc , snowball_dir, amount = 2))
 	
 
-	possible_moves.extend(get_possible_directions([curr_dir] , Action.MOVE , order = 3 , base = 2))
+	possible_moves.extend(get_possible_directions([curr_dir] , Action.MOVE , order = 3 , base = 3))
 
 	print possible_moves
 
@@ -84,22 +121,36 @@ def dummy(board):
 		possible_action = possible_move[0]
 		possible_direction = possible_move[1]
 
-		if possible_action == Action.MOVE or possible_action == Action.THROWSNOWBALL:
-			object = board.get_object_at(board.next_pos_in_direction((0,0) , possible_direction))
-			if object:
+		if possible_action == Action.MOVE:
+			#Moving Action
+
+			#TODO Add all non-player pieces to avoid_locs
+			possible_next_loc = board.next_pos_in_direction((0, 0) , possible_direction)
+			object = board.get_object_at(possible_next_loc)
+			if object or possible_next_loc in avoid_locs:
 				possible_move = random.choice(possible_moves)
 				continue
 			else:
-				if possible_action == Action.THROWSNOWBALL:
-					snowballs -= 1
 				curr_dir = possible_direction
 				return possible_move
+		elif possible_action == Action.THROWSNOWBALL:
+			if snowballs > 0 and curr_loc not in avoid_locs:
+				print "Throwing Snowball", possible_direction
+				curr_dir = possible_direction
+				print curr_loc , curr_dir
+				snowball_locs[curr_loc] = curr_dir		
+				snowballs -= 1
+				return possible_move
+			else:
+				possible_move = random.choice(possible_moves)
 		elif possible_action == Action.MAKESNOWBALL:
-			snowballs += 1
-			curr_dir = possible_direction
-			return possible_move
+			if curr_loc not in avoid_locs:
+				curr_dir = possible_direction
+				snowballs += 1
+				return possible_move
+			else: 
+				possible_move = random.choice(possible_moves)
 
-	
 
 def get_distance(loc , curr_loc=(0,0)):
 	return math.sqrt(math.pow(loc[0] - curr_loc[0] , 2) + math.pow(loc[1] - curr_loc[1], 2))
@@ -136,13 +187,13 @@ def get_slope(loc , curr_loc = (0,0)):
 	if curr_loc[1] - loc[1] == 0:
 		return 0
 	else:
-		return (curr_loc[0] - loc[0]) / (curr_loc[1] - loc[1])
+		return float((curr_loc[0] - loc[0])) / float((curr_loc[1] - loc[1]))
 
 def get_opposite_direction(direction):
 	return (direction + 4) % 8
 
 def get_opposite_diagonal_directions(direction):
-	return [(direction - 5) % 8 , (direction + 5) % 8]
+	return [(direction + 3 ) % 8 , (direction + 5) % 8]
 
 def get_perp_directions(direction):
 	return (direction + 1) % 8
@@ -170,14 +221,15 @@ def get_possible_directions(directions , action,  order = 2 , base = 2):
 
 # Initial direction to try to move
 curr_dir = Direction.SOUTH
-last_loc = ()
+curr_loc = (0 , 0)
+snowball_locs = dict()
 
 snowballs = 0
 snowball_target = 0
 min_snowballs = 3
 max_snowballs = 10
 
-min_player_distance = 3.5
+min_player_distance = 3
 
 max_throw_snowball_distance = 6
 
