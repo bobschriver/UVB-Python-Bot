@@ -60,14 +60,14 @@ def dummy(board):
 			print player_slope
 
 			if player_dist <= min_player_distance:
-				possible_directions = get_possible_directions(get_opposite_diagonal_directions(player_dir) , Action.MOVE , order = 1 , base = 30)
+				possible_directions = get_possible_directions(get_opposite_diagonal_directions(player_dir) , Action.MOVE , order = 1 , base = 15 * math.pow(min_player_distance - player_dist , 2))
 				possible_moves.extend(possible_directions)
 			else:
-				possible_directions = get_possible_directions([player_dir] , Action.MOVE , order = 2, base = 5)
+				possible_directions = get_possible_directions([player_dir] , Action.MOVE , order = 2, base = 8)
 				possible_moves.extend(possible_directions)
 		
 			if player_dist <= max_throw_snowball_distance:
-				possible_directions = get_possible_directions([player_dir] , Action.THROWSNOWBALL , order = 1 , base = 20 + max_throw_snowball_distance - player_dist)
+				possible_directions = get_possible_directions([player_dir] , Action.THROWSNOWBALL , order = 1 , base = 20*(max_throw_snowball_distance - player_dist))
 				possible_moves.extend(possible_directions)
 
 
@@ -104,14 +104,14 @@ def dummy(board):
 	avoid_locs = []
 	
 	#Fix this to something better once collision is understood
-	for (snowball_loc), snowball_dir in snowball_locs:
+	for (snowball_loc), snowball_dir in snowball_locs.iteritems():
 		print snowball_loc , snowball_dir
 		avoid_locs.append(snowball_loc)
 		avoid_locs.append(board.next_pos_in_direction(snowball_loc , snowball_dir))
 		avoid_locs.append(board.next_pos_in_direction(snowball_loc , snowball_dir, amount = 2))
 	
 
-	possible_moves.extend(get_possible_directions([curr_dir] , Action.MOVE , order = 3 , base = 3))
+	possible_moves.extend(get_possible_directions([curr_dir] , Action.MOVE , order = 4 , base = 3))
 
 	print possible_moves
 
@@ -132,6 +132,10 @@ def dummy(board):
 				continue
 			else:
 				curr_dir = possible_direction
+
+				for snowball_loc, snowball_dir in snowball_locs.iteritems():
+					snowball_loc = get_next_pos_in_direction(snowball_loc , get_opposite_direction(curr_dir))
+
 				return possible_move
 		elif possible_action == Action.THROWSNOWBALL:
 			if snowballs > 0 and curr_loc not in avoid_locs:
@@ -229,9 +233,9 @@ snowball_target = 0
 min_snowballs = 3
 max_snowballs = 10
 
-min_player_distance = 3
+min_player_distance = 3.5
 
-max_throw_snowball_distance = 6
+max_throw_snowball_distance = 7
 
 
 # Create our client
