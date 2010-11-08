@@ -58,7 +58,7 @@ def dummy(board):
 
 			if player_dist < closest_player_dist:
 				closest_player_dist = player_dist
-				closest_player_dir = get_direction(player_loc)
+				closest_player_dir = get_navig_direction(player_loc , board)
 				closest_player_slope = get_slope(player_loc)
 				closest_player_loc = player_loc
 		#elif object == board.TREE or object == board.SNOWMAN or object == board.EDGE:
@@ -70,7 +70,7 @@ def dummy(board):
 
 	if closest_player_loc:
 		if closest_player_dist < min_player_distance:
-			possible_moves.extend(get_possible_directions(get_opposite_diagonal_directions(closest_player_dir) , Action.MOVE , order = 1))
+			possible_moves.extend(get_possible_directions([get_opposite_direction(closest_player_dir)] , Action.MOVE , order = 1))
 		elif (closest_player_dist <= max_throw_snowball_distance or curr_dir == closest_player_dir) and is_cardinal(closest_player_slope):
 			possible_moves.extend(get_possible_directions([closest_player_dir] , Action.THROWSNOWBALL , order = 1))
 		else:	
@@ -102,7 +102,7 @@ def dummy(board):
 						min_player_dist = player_dist
 						closest_player_loc = player_loc
 				if closest_player_loc:
-					snowball_dir = get_direction(snowball_loc , closest_player_loc)
+					snowball_dir = get_direction(snowball_loc ,  closest_player_loc)
 					print "Snowball Loc " , snowball_loc , " Snowball Dir " ,  snowball_dir
 					snowball_locs[snowball_loc] = snowball_dir
 
@@ -128,8 +128,18 @@ def dummy(board):
 		if possible_action == Action.MOVE:
 			possible_next_loc = board.next_pos_in_direction(curr_loc , possible_direction)
 			object = board.get_object_at(possible_next_loc)
+			
+			is_close_to_player = True
 
-			if not object and possible_next_loc not in avoid_locs:
+			if closest_player_loc:
+				possible_distance = get_distance(possible_next_loc , closest_player_loc)
+				if possible_distance < min_player_distance:
+					is_close_to_player = False
+
+				if possible_distance > closest_player_distance:
+					is_close_to_player = True
+
+			if not object and possible_next_loc not in avoid_locs and is_close_to_player:
 				curr_dir = possible_direction
 				curr_loc = board.next_pos_in_direction(curr_loc , curr_dir)
 
@@ -155,7 +165,10 @@ def get_distance(loc , curr_loc=(0,0)):
 
 	return max(x_diff , y_diff)
 
-def get_direction(loc , curr_loc=(0,0)):
+def get_abs_distance(loc , curr_loc=(0,0)):
+	return math.sqrt(math.pow(loc[0] - curr_loc[0] , 2) + math.pow(loc[1] - curr_loc[1] , 2))
+
+def get_direction(loc, curr_loc=(0,0)):
 	
 	x_diff = curr_loc[0] - loc[0]
 	y_diff = curr_loc[1] - loc[1]
@@ -180,7 +193,23 @@ def get_direction(loc , curr_loc=(0,0)):
 		if y_diff > 0:
 			return Direction.NORTH
 		else:
-			return Direction.SOUTH 
+			return Direction.SOUTH
+	
+def get_navig_direction(loc , board, curr_loc=(0,0)):
+	min_direction = 0
+	min_direction_dist = sys.maxint
+
+	for i in range(8):
+		distance = get_abs_distance(board.next_pos_in_direction(curr_loc , i) , loc)
+		print "Distance: " , distance , "Direction: ", i
+		if distance < min_direction_dist:
+			min_direction_dist = distance
+			min_direction = i
+	
+	print "Min Direction: " , min_direction
+	return min_direction
+
+
 
 def get_slope(loc , curr_loc = (0,0)):
 	if curr_loc[0] - loc[0] == 0:
