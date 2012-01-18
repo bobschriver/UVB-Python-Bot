@@ -30,7 +30,7 @@ def dummy(board):
 	possible_moves = list()
 
 	if snowballs < min_snowballs:
-		max_snowballs = 10
+		max_snowballs = 7
 		possible_moves.append((Action.MAKESNOWBALL , curr_dir))
 
 	#replace with the curr_loc + direction at some point
@@ -38,8 +38,7 @@ def dummy(board):
 		if board.get_object_at(loc) == board.ME:
 			curr_loc = eval(loc)		
 
-	player_locs = []
-	avoid_locs = []
+	player_locs = list()
 
 	closest_player_loc = ()
 	closest_player_slope = 0
@@ -47,35 +46,50 @@ def dummy(board):
 	closest_player_dist = sys.maxint
 
 	for loc in board.objects:
-		object = board.get_object_at(loc)
-		if object == board.PLAYER:
+		if board.get_object_at(loc) == board.PLAYER:
 			player_loc = eval(loc)
 			player_locs.append(player_loc)
-
+	
+			player_dir = get_direction(player_loc)
 			player_dist = get_distance(player_loc)
+			player_slope = get_slope(player_loc)
+			
 
-			print "Player Dist:" , player_dist
-
+			print "Player Dist:" , player_dist," Player Slope:" , player_slope
+			
 			if player_dist < closest_player_dist:
 				closest_player_dist = player_dist
+<<<<<<< HEAD
 				closest_player_dir = get_navig_direction(player_loc , board)
 				closest_player_slope = get_slope(player_loc)
+=======
+				closest_player_dir = player_dir
+				closest_player_slope = player_slope
+>>>>>>> parent of c04a546... Cleaned up some unnecessary code
 				closest_player_loc = player_loc
-		#elif object == board.TREE or object == board.SNOWMAN or object == board.EDGE:
-		#	obstacle_loc = eval(loc)
-		#	avoid_locs.append(obstacle_loc)
 	
 	print "Closest Player Location " , closest_player_loc , " Closest Player Distance " ,  closest_player_dist , " Closest Player Dir " , closest_player_dir , " Closest Player Slope " , closest_player_slope
 	print "Curr Dir:" , curr_dir
 
 	if closest_player_loc:
+<<<<<<< HEAD
 		if closest_player_dist < min_player_distance:
 			possible_moves.extend(get_possible_directions([get_opposite_direction(closest_player_dir)] , Action.MOVE , order = 1))
 		elif (closest_player_dist <= max_throw_snowball_distance or curr_dir == closest_player_dir) and is_cardinal(closest_player_slope):
 			possible_moves.extend(get_possible_directions([closest_player_dir] , Action.THROWSNOWBALL , order = 1))
+=======
+		if closest_player_dist <= min_player_distance:
+			possible_directions = get_possible_directions(get_opposite_diagonal_directions(closest_player_dir) , Action.MOVE , order = 1)
+			possible_moves.extend(possible_directions)
+		elif (closest_player_dist <= max_throw_snowball_distance or curr_dir == closest_player_dir) and (abs(closest_player_slope) == 1 or abs(closest_player_slope) == 0):
+			possible_directions = get_possible_directions([closest_player_dir] , Action.THROWSNOWBALL , order = 1)
+			possible_moves.extend(possible_directions)
+>>>>>>> parent of c04a546... Cleaned up some unnecessary code
 		else:	
 			print " Closest Player Dir:" , closest_player_dir
 			possible_moves.extend(get_possible_directions([closest_player_dir] , Action.MOVE , order = 2))
+
+	#TODO: implement snowball tracking
 	
 	tmp_snowball_locs = dict()
 
@@ -87,6 +101,7 @@ def dummy(board):
 
 	snowball_locs = tmp_snowball_locs
 
+	#Fix this to deal with Rougue snowballs
 	for loc in board.objects:
 		if board.get_object_at(loc) == board.SNOWBALL:
 			snowball_loc = eval(loc)
@@ -96,8 +111,9 @@ def dummy(board):
 				for player_loc in player_locs:
 					player_dist = get_distance(snowball_loc , player_loc)
 					player_slope = get_slope(snowball_loc , player_loc)
-					
-					if player_dist < min_player_dist and player_loc != curr_loc and is_cardinal(player_slope):
+					player_slope = abs(player_slope)
+
+					if player_dist < min_player_dist and player_loc != curr_loc and (player_slope == 1 or player_slope == 0):
 						print "Player Dist" ,  player_dist , " Player Loc " , player_loc , " Player Slope " , player_slope
 						min_player_dist = player_dist
 						closest_player_loc = player_loc
@@ -106,8 +122,13 @@ def dummy(board):
 					print "Snowball Loc " , snowball_loc , " Snowball Dir " ,  snowball_dir
 					snowball_locs[snowball_loc] = snowball_dir
 
+
+
+	avoid_locs = []
+	
+	#Fix this to something better once collision is understood
 	for (snowball_loc), snowball_dir in snowball_locs.iteritems():
-		print "Snowball Loc:" , snowball_loc , "Snowball Dir:" , snowball_dir
+		print snowball_loc , snowball_dir
 		avoid_locs.append(snowball_loc)
 		avoid_locs.append(board.next_pos_in_direction(snowball_loc , snowball_dir))
 		avoid_locs.append(board.next_pos_in_direction(snowball_loc , snowball_dir, amount = 2))
@@ -126,6 +147,7 @@ def dummy(board):
 		possible_direction = possible_move[1]
 
 		if possible_action == Action.MOVE:
+<<<<<<< HEAD
 			possible_next_loc = board.next_pos_in_direction(curr_loc , possible_direction)
 			object = board.get_object_at(possible_next_loc)
 			
@@ -140,8 +162,17 @@ def dummy(board):
 					is_close_to_player = True
 
 			if not object and possible_next_loc not in avoid_locs and is_close_to_player:
+=======
+			#Moving Action
+
+			#TODO Add all non-player pieces to avoid_locs
+			possible_next_loc = board.next_pos_in_direction((0, 0) , possible_direction)
+			object = board.get_object_at(possible_next_loc)
+			if object or possible_next_loc in avoid_locs:
+				continue
+			else:
+>>>>>>> parent of c04a546... Cleaned up some unnecessary code
 				curr_dir = possible_direction
-				curr_loc = board.next_pos_in_direction(curr_loc , curr_dir)
 
 				for snowball_loc, snowball_dir in snowball_locs.iteritems():
 					snowball_loc = board.next_pos_in_direction(snowball_loc , get_opposite_direction(curr_dir))
@@ -151,25 +182,36 @@ def dummy(board):
 			if snowballs > 0 and  check_snowball_path(board , possible_direction , curr_loc) and curr_loc not in avoid_locs:
 				print "Throwing Snowball", possible_direction
 				curr_dir = possible_direction
+				print curr_loc , curr_dir
 				snowball_locs[curr_loc] = curr_dir		
 				snowballs -= 1
 				return possible_move
 		elif possible_action == Action.MAKESNOWBALL:
 			if curr_loc not in avoid_locs:
+				curr_dir = possible_direction
 				snowballs += 1
 				return possible_move
 
+
 def get_distance(loc , curr_loc=(0,0)):
+	#return math.sqrt(math.pow(loc[0] - curr_loc[0] , 2) + math.pow(loc[1] - curr_loc[1], 2))
+	#return abs(loc[0] - curr_loc[0]) + abs(loc[1] - curr_loc[1])
 	x_diff = abs(loc[0] - curr_loc[0])
 	y_diff = abs(loc[1] - curr_loc[1])
 
 	return max(x_diff , y_diff)
 
+<<<<<<< HEAD
 def get_abs_distance(loc , curr_loc=(0,0)):
 	return math.sqrt(math.pow(loc[0] - curr_loc[0] , 2) + math.pow(loc[1] - curr_loc[1] , 2))
 
 def get_direction(loc, curr_loc=(0,0)):
 	
+=======
+def get_direction(loc , curr_loc=(0,0)):
+	#global last_loc
+
+>>>>>>> parent of c04a546... Cleaned up some unnecessary code
 	x_diff = curr_loc[0] - loc[0]
 	y_diff = curr_loc[1] - loc[1]
 
@@ -212,13 +254,10 @@ def get_navig_direction(loc , board, curr_loc=(0,0)):
 
 
 def get_slope(loc , curr_loc = (0,0)):
-	if curr_loc[0] - loc[0] == 0:
+	if curr_loc[1] - loc[1] == 0:
 		return 0
 	else:
-		return float((curr_loc[1] - loc[1])) / float((curr_loc[0] - loc[0]))
-
-def is_cardinal(slope):
-	return abs(slope) == 1 or abs(slope) == 0
+		return float((curr_loc[0] - loc[0])) / float((curr_loc[1] - loc[1]))
 
 def get_opposite_direction(direction):
 	return (direction + 4) % 8
@@ -233,6 +272,7 @@ def get_possible_directions(directions , action,  order = 2):
 	possible_directions = [] 
 	for i in range(order):
 		for direction in directions:
+		#print i , direction
 			possible_direction = (direction + i) % 8
 			possible_direction_opp = (direction - i + 8) % 8
 
@@ -254,6 +294,13 @@ def check_snowball_path(board , direction, curr_loc = (0,0)):
 			return False
 		elif object == board.PLAYER:
 			return True
+
+def adjust_distance(distance , slope):
+	slope = abs(slope)
+	if slope != 0:
+		return distance / math.sqrt(2)
+	else:
+		return distance
 
 # Initial direction to try to move
 curr_dir = Direction.NORTH
